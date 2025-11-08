@@ -78,7 +78,7 @@ async def startup_event():
 
     # Initialize LangChain components
     try:
-        from app.langchain_app.chains import get_default_chat_chain
+        from app.langchain_app.chains import get_default_rag_chain
         from app.langchain_app.vectorstore import init_pinecone
 
         # Initialize Pinecone
@@ -86,10 +86,10 @@ async def startup_event():
         init_pinecone()
         print("Pinecone initialized successfully")
 
-        # Initialize default chain
-        print("Initializing LangChain components...")
-        chain = get_default_chat_chain()
-        print("LangChain components initialized successfully")
+        # Initialize default RAG chain with vectorstore
+        print("Initializing LangChain RAG components...")
+        chain = get_default_rag_chain()
+        print("LangChain RAG components initialized successfully")
 
     except Exception as e:
         print(f"Warning: Failed to initialize LangChain components: {e}")

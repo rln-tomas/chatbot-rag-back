@@ -52,8 +52,8 @@ async def chat(
         Chat response with bot reply
     """
     if _chat_chain is None:
-        from app.langchain_app.chains import get_chat_chain
-        chain = get_chat_chain()
+        from app.langchain_app.chains import get_rag_chain
+        chain = get_rag_chain()
     else:
         chain = _chat_chain
 
@@ -85,8 +85,8 @@ async def chat_stream(
         StreamingResponse with SSE events
     """
     if _chat_chain is None:
-        from app.langchain_app.chains import get_chat_chain
-        chain = get_chat_chain()
+        from app.langchain_app.chains import get_rag_chain
+        chain = get_rag_chain()
     else:
         chain = _chat_chain
 
