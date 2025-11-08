@@ -2,11 +2,51 @@
 LangChain chains for RAG and chat.
 """
 
-from langchain.schema.runnable import RunnablePassthrough, RunnableParallel
+from langchain.schema.runnable import RunnablePassthrough, RunnableParallel, RunnableLambda
 from langchain.schema.output_parser import StrOutputParser
+from langchain.schema import BaseMessage
 from app.langchain_app.llm import get_default_llm
 from app.langchain_app.prompts import get_rag_prompt, get_chat_prompt
 from app.langchain_app.vectorstore import get_retriever
+
+
+def extract_user_query(input_dict):
+    """
+    Extract the last user message content for retrieval.
+    
+    Args:
+        input_dict: Dictionary with 'messages' key containing list of messages
+        
+    Returns:
+        String content of the last message
+    """
+    messages = input_dict.get("messages", [])
+    if not messages:
+        return ""
+    
+    # Get the last message
+    last_message = messages[-1]
+    
+    # Extract content from message
+    if isinstance(last_message, BaseMessage):
+        return last_message.content
+    elif isinstance(last_message, dict) and "content" in last_message:
+        return last_message["content"]
+    else:
+        return str(last_message)
+
+
+def extract_messages(input_dict):
+    """
+    Extract messages list from input dictionary.
+    
+    Args:
+        input_dict: Dictionary with 'messages' key
+        
+    Returns:
+        List of messages
+    """
+    return input_dict.get("messages", [])
 
 
 def get_rag_chain(k: int = 4):
@@ -24,11 +64,11 @@ def get_rag_chain(k: int = 4):
     retriever = get_retriever(k=k)
 
     # Create RAG chain
-    # The chain retrieves context and generates response
+    # Extract query for retriever, extract messages list for prompt
     chain = (
         RunnableParallel({
-            "context": retriever,
-            "messages": RunnablePassthrough()
+            "context": RunnableLambda(extract_user_query) | retriever,
+            "messages": RunnableLambda(extract_messages)
         })
         | prompt
         | llm
