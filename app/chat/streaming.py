@@ -14,6 +14,7 @@ async def stream_chat_response(
 ) -> AsyncGenerator[str, None]:
     """
     Stream chat response using Server-Sent Events.
+    Works with both RAG and simple chat chains.
 
     Args:
         chain: LangChain chain to use for generation
@@ -32,12 +33,13 @@ async def stream_chat_response(
 
         async for chunk in chain.astream({"messages": full_history}):
             # Extract content from chunk
-            if hasattr(chunk, 'content'):
+            # The RAG chain with StrOutputParser returns strings directly
+            if isinstance(chunk, str):
+                content = chunk
+            elif hasattr(chunk, 'content'):
                 content = chunk.content
             elif isinstance(chunk, dict) and 'content' in chunk:
                 content = chunk['content']
-            elif isinstance(chunk, str):
-                content = chunk
             else:
                 content = str(chunk)
 

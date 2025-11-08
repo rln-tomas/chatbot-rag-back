@@ -138,7 +138,10 @@ class ChatService:
             response = chain.invoke({"messages": full_history})
 
             # Extract content from response
-            if hasattr(response, 'content'):
+            # RAG chain with StrOutputParser returns string directly
+            if isinstance(response, str):
+                bot_response = response
+            elif hasattr(response, 'content'):
                 bot_response = response.content
             elif isinstance(response, dict) and 'content' in response:
                 bot_response = response['content']
