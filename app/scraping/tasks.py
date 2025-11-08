@@ -48,6 +48,7 @@ def scrape_and_embed_task(config_id: int, user_id: int):
         config = config_repo.get_by_id(config_id, user_id)
 
         if not config:
+            db.close()
             raise ValueError(f"Configuration {config_id} not found")
 
         # Update status to processing
@@ -92,12 +93,21 @@ def scrape_and_embed_task(config_id: int, user_id: int):
         }
 
     except Exception as e:
+        # Rollback any pending transactions
+        try:
+            db.rollback()
+        except:
+            pass
+            
         # Update status to failed with error message
-        config_repo.update_status(
-            config_id,
-            ScrapingStatus.FAILED,
-            error_message=str(e)
-        )
+        try:
+            config_repo.update_status(
+                config_id,
+                ScrapingStatus.FAILED,
+                error_message=str(e)
+            )
+        except:
+            pass
         raise
 
     finally:
