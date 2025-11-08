@@ -1,9 +1,7 @@
-version: '3.8'
-
 services:
-  # MySQL Database
+  # MariaDB Database
   mysql:
-    image: mysql:8.0
+    image: mariadb:11
     container_name: chatbot_mysql
     restart: unless-stopped
     environment:
@@ -16,9 +14,11 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      timeout: 20s
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
       retries: 10
+      start_period: 40s
     networks:
       - chatbot_network
 
@@ -38,6 +38,24 @@ services:
       retries: 5
     networks:
       - chatbot_network
+
+  # Ollama (LLM Server)
+  ollama:
+    image: ollama/ollama:latest
+    container_name: chatbot_ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - chatbot_network
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   # FastAPI Application
   api:
@@ -62,6 +80,8 @@ services:
       mysql:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      ollama:
         condition: service_healthy
     networks:
       - chatbot_network
@@ -115,6 +135,7 @@ services:
 volumes:
   mysql_data:
   redis_data:
+  ollama_data:
 
 networks:
   chatbot_network:
