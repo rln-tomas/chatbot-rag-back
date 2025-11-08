@@ -29,7 +29,7 @@ class DatabaseTask(Task):
 
 def scrape_and_embed_task(config_id: int, user_id: int):
     """
-    Celery task to scrape URL and embed into vector store.
+    Celery task to scrape URL (and all pages in the same domain) and embed into vector store.
 
     This function will be decorated with @celery_app.task in worker/tasks/scraping_tasks.py
 
@@ -38,7 +38,7 @@ def scrape_and_embed_task(config_id: int, user_id: int):
         user_id: User ID
 
     Returns:
-        Success message
+        Success message with statistics
     """
     db = SessionLocal()
 
@@ -54,9 +54,19 @@ def scrape_and_embed_task(config_id: int, user_id: int):
         # Update status to processing
         config_repo.update_status(config_id, ScrapingStatus.PROCESSING)
 
-        # Scrape URL
-        scraper = WebScraper()
-        chunks = scraper.scrape_url(config.url)
+        # Scrape URL and all pages in the same domain recursively
+        scraper = WebScraper(
+            chunk_size=2000,
+            chunk_overlap=400,
+            max_pages=50,  # Limit to 50 pages for safety
+            timeout=10
+        )
+        
+        print(f"Starting recursive scraping of {config.url}")
+        chunks = scraper.scrape_website_recursive(config.url)
+        
+        if not chunks:
+            raise ValueError("No content could be extracted from the website")
 
         # Import here to avoid circular imports
         from app.langchain_app.vectorstore import get_vectorstore
@@ -77,19 +87,41 @@ def scrape_and_embed_task(config_id: int, user_id: int):
             for chunk in chunks
         ]
 
-        # Add to vector store
-        vectorstore.add_texts(
-            texts=texts,
-            metadatas=metadatas
-        )
+        print(f"Embedding {len(texts)} chunks into Pinecone...")
+        
+        # Add to vector store in batches to respect Google's API limits
+        # Google Gemini free tier allows max 250 requests per minute
+        # Using smaller batch size to stay well within limits
+        batch_size = 50  # Reduced from 100 to stay safe with Google API limits
+        for i in range(0, len(texts), batch_size):
+            batch_texts = texts[i:i + batch_size]
+            batch_metadatas = metadatas[i:i + batch_size]
+            
+            vectorstore.add_texts(
+                texts=batch_texts,
+                metadatas=batch_metadatas
+            )
+            batch_number = i // batch_size + 1
+            total_batches = (len(texts) + batch_size - 1) // batch_size
+            print(f"Embedded batch {batch_number} of {total_batches} ({len(batch_texts)} chunks)")
+            
+            # Add a small delay between batches to avoid rate limiting
+            import time
+            if i + batch_size < len(texts):  # Don't delay after the last batch
+                time.sleep(1)  # 1 second delay between batches
 
         # Update status to completed
         config_repo.update_status(config_id, ScrapingStatus.COMPLETED)
+        
+        # Count unique pages scraped
+        unique_sources = set(chunk["metadata"].get("source") for chunk in chunks)
 
         return {
             "status": "success",
             "config_id": config_id,
-            "chunks_processed": len(chunks)
+            "chunks_processed": len(chunks),
+            "pages_scraped": len(unique_sources),
+            "message": f"Successfully scraped {len(unique_sources)} pages and processed {len(chunks)} chunks"
         }
 
     except Exception as e:
