@@ -97,6 +97,17 @@ async def chat_stream(
         user_id=current_user.id,
         conversation_id=request.conversation_id
     )
+    
+    # Check if this is the first message in the conversation
+    message_repo = MessageRepository(db)
+    is_first_message = message_repo.count_by_conversation(conversation.id) == 0
+    
+    # If it's a new conversation without a title, generate one from the first message
+    if is_first_message and not conversation.title:
+        from app.chat.service import generate_conversation_title
+        title = generate_conversation_title(request.message)
+        service.conversation_repo.update_title(conversation.id, title)
+        conversation.title = title  # Update local instance
 
     # Save user message
     user_msg = service.save_message(
@@ -202,3 +213,31 @@ async def get_conversation(
     conversation = service.get_conversation_with_messages(conversation_id, current_user.id)
 
     return ConversationResponse.model_validate(conversation)
+
+
+@router.delete("/conversations", status_code=status.HTTP_200_OK)
+async def delete_all_conversations(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Delete all conversations and their associated messages for the authenticated user.
+    
+    This endpoint will:
+    - Delete all conversations belonging to the user
+    - Automatically delete all messages in those conversations (cascade delete)
+    
+    Args:
+        current_user: Authenticated user
+        db: Database session
+        
+    Returns:
+        Success message with count of deleted conversations
+    """
+    service = ChatService(db)
+    deleted_count = service.delete_all_conversations(current_user.id)
+    
+    return {
+        "message": "All conversations deleted successfully",
+        "conversations_deleted": deleted_count
+    }

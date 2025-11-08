@@ -49,6 +49,44 @@ class ConversationRepository:
             return True
         return False
 
+    def update_title(self, conversation_id: int, title: str) -> Optional[Conversation]:
+        """
+        Update the title of a conversation.
+        
+        Args:
+            conversation_id: Conversation ID
+            title: New title for the conversation
+            
+        Returns:
+            Updated conversation or None if not found
+        """
+        conversation = self.db.query(Conversation).filter(
+            Conversation.id == conversation_id
+        ).first()
+        
+        if conversation:
+            conversation.title = title
+            self.db.commit()
+            self.db.refresh(conversation)
+        
+        return conversation
+
+    def delete_all_by_user(self, user_id: int) -> int:
+        """
+        Delete all conversations for a user.
+        
+        Args:
+            user_id: User ID
+            
+        Returns:
+            Number of conversations deleted
+        """
+        deleted_count = self.db.query(Conversation).filter(
+            Conversation.user_id == user_id
+        ).delete(synchronize_session=False)
+        self.db.commit()
+        return deleted_count
+
 
 class MessageRepository:
     """Repository for Message database operations."""

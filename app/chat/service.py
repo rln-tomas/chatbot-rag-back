@@ -11,6 +11,30 @@ from app.chat.models import Conversation, Message
 from app.chat.schemas import ChatResponse, MessageResponse
 
 
+def generate_conversation_title(message: str, max_length: int = 50) -> str:
+    """
+    Generate a conversation title from the first user message.
+    
+    Args:
+        message: The first user message
+        max_length: Maximum length for the title
+        
+    Returns:
+        Generated title
+    """
+    # Clean and truncate the message
+    title = message.strip()
+    
+    # Remove newlines and extra spaces
+    title = ' '.join(title.split())
+    
+    # Truncate to max_length and add ellipsis if needed
+    if len(title) > max_length:
+        title = title[:max_length - 3] + "..."
+    
+    return title or "Nueva conversación"
+
+
 class ChatService:
     """Service for chat operations."""
 
@@ -120,6 +144,15 @@ class ChatService:
         """
         # Get or create conversation
         conversation = self.get_or_create_conversation(user_id, conversation_id)
+        
+        # Check if this is the first message in the conversation
+        is_first_message = self.message_repo.count_by_conversation(conversation.id) == 0
+        
+        # If it's a new conversation without a title, generate one from the first message
+        if is_first_message and not conversation.title:
+            title = generate_conversation_title(message)
+            self.conversation_repo.update_title(conversation.id, title)
+            conversation.title = title  # Update local instance
 
         # Get conversation history for context
         history = self.get_conversation_history(conversation.id)
@@ -207,3 +240,17 @@ class ChatService:
             List of conversations
         """
         return self.conversation_repo.get_all_by_user(user_id)
+
+    def delete_all_conversations(self, user_id: int) -> int:
+        """
+        Delete all conversations and their messages for a user.
+        Messages are deleted automatically due to cascade delete in the model.
+
+        Args:
+            user_id: User ID
+
+        Returns:
+            Number of conversations deleted
+        """
+        deleted_count = self.conversation_repo.delete_all_by_user(user_id)
+        return deleted_count
