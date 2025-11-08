@@ -32,10 +32,38 @@ class Settings(BaseSettings):
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
+    # LLM Provider Configuration
+    LLM_PROVIDER: str = Field(
+        default="gemini",
+        description="LLM provider to use: 'gemini' or 'ollama'"
+    )
+    
     # Google Gemini API
     GEMINI_API_KEY: str = Field(
-        ...,
-        description="Google Gemini API key"
+        default="",
+        description="Google Gemini API key (required if LLM_PROVIDER=gemini)"
+    )
+    GEMINI_MODEL: str = Field(
+        default="gemini-2.0-flash-exp",
+        description="Gemini model to use"
+    )
+    GEMINI_EMBEDDING_MODEL: str = Field(
+        default="models/embedding-001",
+        description="Gemini embedding model to use"
+    )
+    
+    # Ollama Configuration
+    OLLAMA_BASE_URL: str = Field(
+        default="http://localhost:11434",
+        description="Ollama base URL"
+    )
+    OLLAMA_MODEL: str = Field(
+        default="llama3.2",
+        description="Ollama model to use for chat/completion"
+    )
+    OLLAMA_EMBEDDING_MODEL: str = Field(
+        default="nomic-embed-text",
+        description="Ollama model to use for embeddings"
     )
 
     # Pinecone Configuration
@@ -48,7 +76,7 @@ class Settings(BaseSettings):
         description="Pinecone environment"
     )
     PINECONE_INDEX_NAME: str = Field(
-        default="chatbot-rag-index",
+        default="rag-testing",
         description="Pinecone index name"
     )
 
