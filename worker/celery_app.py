@@ -5,6 +5,12 @@ Celery application configuration.
 from celery import Celery
 from app.core.config import settings
 
+# Import all models to ensure they're registered with SQLAlchemy
+# This must happen before any database operations
+from app.auth.models import User  # noqa: F401
+from app.config_management.models import Configuration  # noqa: F401
+from app.chat.models import Conversation, Message  # noqa: F401
+
 # Create Celery app
 celery_app = Celery(
     "chatbot_worker",
