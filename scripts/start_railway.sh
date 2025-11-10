@@ -22,7 +22,20 @@ fi
 
 echo ""
 echo "=================================================="
-echo "Step 2: Starting Uvicorn Server"
+echo "Step 2: Running Database Seeders"
+echo "=================================================="
+
+# Run seeders (creates test users if they don't exist)
+if python scripts/seed.py; then
+    echo "✅ Seeders completed successfully"
+else
+    echo "⚠️  Seeder failed, but continuing startup..."
+    echo "   This is usually OK if data already exists"
+fi
+
+echo ""
+echo "=================================================="
+echo "Step 3: Starting Uvicorn Server"
 echo "=================================================="
 
 # Start the FastAPI application

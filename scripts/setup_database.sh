@@ -53,7 +53,7 @@ check_docker() {
 check_database() {
     echo -e "${YELLOW}▶${NC} Verificando conexión a la base de datos..."
     
-    docker compose exec api python -c "from app.core.database import engine; engine.connect()" 2>/dev/null
+    docker compose exec api python -c "from app.core.database import get_engine; get_engine().connect()" 2>/dev/null
     
     if [ $? -eq 0 ]; then
         echo -e "${GREEN}✓${NC} Base de datos conectada"

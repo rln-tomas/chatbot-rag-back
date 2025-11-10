@@ -15,7 +15,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from sqlalchemy.orm import Session
-from app.core.database import SessionLocal, engine, Base
+from app.core.database import get_session_local, get_engine, Base
 from app.core.security import get_password_hash
 from app.auth.models import User
 from app.config_management.models import Configuration, ScrapingStatus
@@ -198,12 +198,12 @@ def seed_conversations(db: Session, users: list[User]):
         messages2 = [
             Message(
                 conversation_id=conv2.id,
-                role="user",
+                is_user_message=True,
                 content="What are the advantages of FastAPI?"
             ),
             Message(
                 conversation_id=conv2.id,
-                role="assistant",
+                is_user_message=False,
                 content="FastAPI offers several advantages: high performance comparable to NodeJS and Go, automatic API documentation with Swagger UI, built-in data validation using Pydantic, type hints support, and async/await capabilities for handling concurrent requests efficiently."
             )
         ]
@@ -220,6 +220,10 @@ def main():
     print("=" * 60)
     print("Starting database seeding...")
     print("=" * 60)
+
+    # Get engine and session (lazy initialization)
+    engine = get_engine()
+    SessionLocal = get_session_local()
 
     # Create tables if they don't exist
     Base.metadata.create_all(bind=engine)
