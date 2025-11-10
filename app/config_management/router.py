@@ -18,6 +18,11 @@ router = APIRouter()
 
 
 @router.post(
+    "",
+    response_model=ConfigurationResponse,
+    status_code=status.HTTP_201_CREATED
+)
+@router.post(
     "/",
     response_model=ConfigurationResponse,
     status_code=status.HTTP_201_CREATED
@@ -42,6 +47,7 @@ async def create_configuration(
     return service.create_configuration(current_user.id, config_data)
 
 
+@router.get("", response_model=ConfigurationListResponse)
 @router.get("/", response_model=ConfigurationListResponse)
 async def get_configurations(
     page: int = Query(1, ge=1, description="Page number"),

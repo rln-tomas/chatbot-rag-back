@@ -6,6 +6,8 @@ Configures and runs the ChatBot RAG API.
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from starlette.middleware.trustedhost import TrustedHostMiddleware
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 from app.core.config import settings
 from app.api.v1.router import api_router
 
@@ -17,6 +19,10 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc"
 )
+
+# Add ProxyHeadersMiddleware FIRST to handle X-Forwarded-Proto from Railway
+# This ensures redirects use HTTPS instead of HTTP
+app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
 
 # Configure CORS
 app.add_middleware(

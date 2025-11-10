@@ -34,6 +34,7 @@ def set_chat_chain(chain):
     _chat_chain = chain
 
 
+@router.post("", response_model=ChatResponse)
 @router.post("/", response_model=ChatResponse)
 async def chat(
     request: ChatRequest,
