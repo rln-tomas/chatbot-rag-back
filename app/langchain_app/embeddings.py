@@ -42,16 +42,18 @@ def get_ollama_embeddings(model_name: Optional[str] = None):
         Configured OllamaEmbeddings instance
     """
     model = model_name or settings.OLLAMA_EMBEDDING_MODEL
-    
-    # Build headers with API key if configured (for Ollama Cloud)
-    headers = {}
+
+    # Build client_kwargs with API key if configured (for Ollama Cloud)
+    client_kwargs = {}
     if settings.OLLAMA_API_KEY:
-        headers["Authorization"] = f"Bearer {settings.OLLAMA_API_KEY}"
-    
+        client_kwargs["headers"] = {
+            "Authorization": f"Bearer {settings.OLLAMA_API_KEY}"
+        }
+
     embeddings = OllamaEmbeddings(
         model=model,
         base_url=settings.OLLAMA_BASE_URL,
-        headers=headers if headers else None,
+        client_kwargs=client_kwargs if client_kwargs else None,
     )
 
     return embeddings

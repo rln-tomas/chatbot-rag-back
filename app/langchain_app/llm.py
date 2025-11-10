@@ -46,17 +46,19 @@ def get_ollama_llm(model_name: Optional[str] = None, temperature: float = 0.7):
         Configured ChatOllama instance
     """
     model = model_name or settings.OLLAMA_MODEL
-    
-    # Build headers with API key if configured (for Ollama Cloud)
-    headers = {}
+
+    # Build client_kwargs with API key if configured (for Ollama Cloud)
+    client_kwargs = {}
     if settings.OLLAMA_API_KEY:
-        headers["Authorization"] = f"Bearer {settings.OLLAMA_API_KEY}"
-    
+        client_kwargs["headers"] = {
+            "Authorization": f"Bearer {settings.OLLAMA_API_KEY}"
+        }
+
     llm = ChatOllama(
         model=model,
         base_url=settings.OLLAMA_BASE_URL,
         temperature=temperature,
-        headers=headers if headers else None,
+        client_kwargs=client_kwargs if client_kwargs else None,
     )
 
     return llm
