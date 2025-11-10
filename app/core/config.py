@@ -5,7 +5,7 @@ Loads environment variables and provides type-safe configuration.
 
 from typing import List
 from pydantic_settings import BaseSettings
-from pydantic import Field
+from pydantic import Field, field_validator
 
 
 class Settings(BaseSettings):
@@ -104,6 +104,23 @@ class Settings(BaseSettings):
 
     # API Settings
     API_V1_PREFIX: str = "/api/v1"
+
+    @field_validator("DATABASE_URL")
+    @classmethod
+    def clean_database_url(cls, v: str) -> str:
+        """
+        Clean and fix DATABASE_URL:
+        - Strip whitespace and newlines (Railway variable issue)
+        - Replace mysql:// with mysql+pymysql:// if needed
+        """
+        # Strip whitespace and newlines
+        v = v.strip()
+
+        # Replace mysql:// with mysql+pymysql:// for SQLAlchemy driver
+        if v.startswith("mysql://"):
+            v = v.replace("mysql://", "mysql+pymysql://", 1)
+
+        return v
 
     class Config:
         env_file = ".env"
