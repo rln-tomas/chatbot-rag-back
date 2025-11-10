@@ -55,7 +55,11 @@ class Settings(BaseSettings):
     # Ollama Configuration
     OLLAMA_BASE_URL: str = Field(
         default="http://localhost:11434",
-        description="Ollama base URL"
+        description="Ollama base URL (use https://api.ollamacloud.com for Ollama Cloud)"
+    )
+    OLLAMA_API_KEY: str = Field(
+        default="",
+        description="Ollama API key (required for Ollama Cloud)"
     )
     OLLAMA_MODEL: str = Field(
         default="llama3.2",
