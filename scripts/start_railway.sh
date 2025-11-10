@@ -12,12 +12,11 @@ echo "=================================================="
 echo "Step 1: Running Alembic Migrations"
 echo "=================================================="
 
-# Run migrations with verbose output and error handling
-if alembic upgrade head -v; then
+# Run migrations with error handling
+if alembic upgrade head; then
     echo "✅ Migrations completed successfully"
 else
     echo "❌ Migration failed with exit code $?"
-    echo "Printing full traceback..."
     exit 1
 fi
 
