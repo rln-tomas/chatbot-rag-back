@@ -35,7 +35,13 @@ class Settings(BaseSettings):
     # LLM Provider Configuration
     LLM_PROVIDER: str = Field(
         default="gemini",
-        description="LLM provider to use: 'gemini' or 'ollama'"
+        description="LLM provider to use for chat/completion: 'gemini' or 'ollama'"
+    )
+
+    # Embeddings Provider Configuration
+    EMBEDDING_PROVIDER: str = Field(
+        default="",
+        description="Embeddings provider: 'gemini', 'ollama', or 'jina'. If empty, uses LLM_PROVIDER"
     )
     
     # Google Gemini API
@@ -68,6 +74,24 @@ class Settings(BaseSettings):
     OLLAMA_EMBEDDING_MODEL: str = Field(
         default="nomic-embed-text",
         description="Ollama model to use for embeddings"
+    )
+
+    # Jina AI Configuration (for embeddings)
+    JINA_API_KEY: str = Field(
+        default="",
+        description="Jina AI API key (get from https://jina.ai/)"
+    )
+    JINA_EMBEDDING_MODEL: str = Field(
+        default="jina-embeddings-v3",
+        description="Jina embedding model to use"
+    )
+    JINA_EMBEDDING_DIMENSIONS: int = Field(
+        default=1024,
+        description="Jina embedding dimensions (32, 64, 128, 256, 512, 768, or 1024)"
+    )
+    JINA_TASK: str = Field(
+        default="retrieval.passage",
+        description="Jina task type: retrieval.query, retrieval.passage, text-matching, classification, or separation"
     )
 
     # Pinecone Configuration

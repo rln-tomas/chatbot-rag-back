@@ -1,10 +1,11 @@
 """
-Embeddings configuration supporting multiple providers (Google Gemini and Ollama).
+Embeddings configuration supporting multiple providers (Google Gemini, Ollama, and Jina AI).
 """
 
 from typing import Optional
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_ollama import OllamaEmbeddings
+from langchain_community.embeddings import JinaEmbeddings
 from app.core.config import settings
 
 
@@ -59,6 +60,39 @@ def get_ollama_embeddings(model_name: Optional[str] = None):
     return embeddings
 
 
+def get_jina_embeddings(
+    model_name: Optional[str] = None,
+    dimensions: Optional[int] = None,
+    task: Optional[str] = None
+):
+    """
+    Get configured Jina AI embeddings instance.
+
+    Args:
+        model_name: Name of the Jina model (defaults to settings.JINA_EMBEDDING_MODEL)
+        dimensions: Embedding dimensions (defaults to settings.JINA_EMBEDDING_DIMENSIONS)
+        task: Task type for embeddings (defaults to settings.JINA_TASK)
+
+    Returns:
+        Configured JinaEmbeddings instance
+    """
+    if not settings.JINA_API_KEY:
+        raise ValueError("JINA_API_KEY is not configured")
+
+    model = model_name or settings.JINA_EMBEDDING_MODEL
+    dims = dimensions or settings.JINA_EMBEDDING_DIMENSIONS
+    task_type = task or settings.JINA_TASK
+
+    embeddings = JinaEmbeddings(
+        jina_api_key=settings.JINA_API_KEY,
+        model_name=model,
+        dimensions=dims,
+        task=task_type,
+    )
+
+    return embeddings
+
+
 def get_embeddings(
     provider: Optional[str] = None,
     model_name: Optional[str] = None
@@ -67,7 +101,8 @@ def get_embeddings(
     Get configured embeddings instance based on provider.
 
     Args:
-        provider: Embeddings provider ('gemini' or 'ollama'). Defaults to settings.LLM_PROVIDER
+        provider: Embeddings provider ('gemini', 'ollama', or 'jina').
+                 Defaults to settings.EMBEDDING_PROVIDER, or settings.LLM_PROVIDER if not set
         model_name: Name of the model to use (provider-specific defaults apply)
 
     Returns:
@@ -76,7 +111,9 @@ def get_embeddings(
     Raises:
         ValueError: If provider is not supported
     """
-    provider = provider or settings.LLM_PROVIDER.lower()
+    # Use EMBEDDING_PROVIDER if set, otherwise fall back to LLM_PROVIDER
+    provider = provider or settings.EMBEDDING_PROVIDER or settings.LLM_PROVIDER
+    provider = provider.lower()
 
     if provider == "gemini":
         return get_gemini_embeddings(
@@ -86,10 +123,14 @@ def get_embeddings(
         return get_ollama_embeddings(
             model_name=model_name
         )
+    elif provider == "jina":
+        return get_jina_embeddings(
+            model_name=model_name
+        )
     else:
         raise ValueError(
             f"Unsupported embeddings provider: {provider}. "
-            f"Supported providers: 'gemini', 'ollama'"
+            f"Supported providers: 'gemini', 'ollama', 'jina'"
         )
 
 

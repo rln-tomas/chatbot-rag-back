@@ -22,10 +22,14 @@ def init_pinecone():
 
     if index_name not in pc.list_indexes().names():
         # Create index with appropriate dimensions for the embedding model
-        # Google embedding-001 has 768 dimensions
+        # Dimensions depend on your EMBEDDING_PROVIDER:
+        # - Gemini (models/embedding-001): 768 dimensions
+        # - Jina (jina-embeddings-v3): 1024 dimensions (default)
+        # - Ollama (nomic-embed-text): 768 dimensions
+        # Make sure this matches your embedding model!
         pc.create_index(
             name=index_name,
-            dimension=768,
+            dimension=1024,  # Updated to 1024 for Jina embeddings
             metric="cosine",
             spec=ServerlessSpec(
                 cloud="aws",
