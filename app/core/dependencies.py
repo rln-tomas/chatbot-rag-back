@@ -6,7 +6,7 @@ from typing import Generator, Optional
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
-from app.core.database import SessionLocal
+from app.core.database import get_session_local
 from app.core.security import decode_token
 
 # HTTP Bearer security scheme
@@ -25,6 +25,7 @@ def get_db() -> Generator[Session, None, None]:
         def endpoint(db: Session = Depends(get_db)):
             # Use db here
     """
+    SessionLocal = get_session_local()
     db = SessionLocal()
     try:
         yield db

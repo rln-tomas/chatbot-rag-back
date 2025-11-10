@@ -75,25 +75,35 @@ async def startup_event():
     print(f"Starting {settings.APP_NAME} v{settings.APP_VERSION}")
     print(f"Environment: {settings.ENVIRONMENT}")
     print(f"Debug mode: {settings.DEBUG}")
+    print(f"LLM Provider: {settings.LLM_PROVIDER}")
 
-    # Initialize LangChain components
-    try:
-        from app.langchain_app.chains import get_default_rag_chain
-        from app.langchain_app.vectorstore import init_pinecone
+    # Initialize LangChain components with timeout protection
+    # This runs async to not block the healthcheck
+    import asyncio
 
-        # Initialize Pinecone
-        print("Initializing Pinecone...")
-        init_pinecone()
-        print("Pinecone initialized successfully")
+    async def init_langchain():
+        try:
+            from app.langchain_app.chains import get_default_rag_chain
+            from app.langchain_app.vectorstore import init_pinecone
 
-        # Initialize default RAG chain with vectorstore
-        print("Initializing LangChain RAG components...")
-        chain = get_default_rag_chain()
-        print("LangChain RAG components initialized successfully")
+            # Initialize Pinecone
+            print("Initializing Pinecone...")
+            init_pinecone()
+            print("✅ Pinecone initialized successfully")
 
-    except Exception as e:
-        print(f"Warning: Failed to initialize LangChain components: {e}")
-        print("API will start but chat features may not work properly")
+            # Initialize default RAG chain with vectorstore
+            print("Initializing LangChain RAG components...")
+            chain = get_default_rag_chain()
+            print("✅ LangChain RAG components initialized successfully")
+
+        except Exception as e:
+            print(f"⚠️  Warning: Failed to initialize LangChain components: {e}")
+            print("API will start but chat features may not work properly")
+            import traceback
+            traceback.print_exc()
+
+    # Run initialization in background to not block startup
+    asyncio.create_task(init_langchain())
 
 
 # Shutdown event

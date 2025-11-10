@@ -2,6 +2,7 @@
 Alembic environment configuration.
 """
 
+import os
 from logging.config import fileConfig
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
@@ -9,7 +10,6 @@ from alembic import context
 
 # Import models for autogenerate
 from app.core.database import Base
-from app.core.config import settings
 
 # Import all models so Alembic can detect them
 from app.auth.models import User
@@ -19,8 +19,17 @@ from app.config_management.models import Configuration
 # this is the Alembic Config object
 config = context.config
 
-# Set the database URL from settings
-config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+# Get DATABASE_URL directly from environment to avoid importing full settings
+# This prevents Pydantic validation errors if other required env vars are missing
+database_url = os.getenv("DATABASE_URL", "mysql+pymysql://user:password@localhost:3306/chatbot_db")
+
+# Clean the database URL (strip whitespace and fix mysql:// prefix)
+database_url = database_url.strip()
+if database_url.startswith("mysql://"):
+    database_url = database_url.replace("mysql://", "mysql+pymysql://", 1)
+
+# Set the database URL
+config.set_main_option("sqlalchemy.url", database_url)
 
 # Interpret the config file for Python logging.
 if config.config_file_name is not None:

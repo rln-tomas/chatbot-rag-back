@@ -4,7 +4,7 @@ Celery tasks for web scraping.
 
 from celery import Task
 from sqlalchemy.orm import Session
-from app.core.database import SessionLocal
+from app.core.database import get_session_local
 from app.config_management.repository import ConfigurationRepository
 from app.config_management.models import ScrapingStatus
 from app.scraping.scraper import WebScraper
@@ -18,6 +18,7 @@ class DatabaseTask(Task):
     @property
     def db(self):
         if self._db is None:
+            SessionLocal = get_session_local()
             self._db = SessionLocal()
         return self._db
 
@@ -40,6 +41,7 @@ def scrape_and_embed_task(config_id: int, user_id: int):
     Returns:
         Success message with statistics
     """
+    SessionLocal = get_session_local()
     db = SessionLocal()
 
     try:
